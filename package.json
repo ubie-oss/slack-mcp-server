@@ -21,9 +21,18 @@
     "examples": "node --import ./ts-node-loader.js examples/get_users.ts"
   },
   "keywords": [
-    "mcp"
+    "mcp",
+    "slack"
   ],
-  "author": "",
+  "author": "Ubie, Inc.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ubie-oss/slack-mcp-server.git"
+  },
+  "homepage": "https://github.com/ubie-oss/slack-mcp-server",
+  "bugs": {
+    "url": "https://github.com/ubie-oss/slack-mcp-server/issues"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
