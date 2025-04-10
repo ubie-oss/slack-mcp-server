@@ -24,7 +24,7 @@
     "mcp"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@slack/web-api": "^7.9.1",

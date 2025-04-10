@@ -21,7 +21,7 @@ Available tools:
 ### Installation
 
 ```bash
-npm install slack-mcp-server
+npm install @ubie-oss/slack-mcp-server
 ```
 
 ### Configuration
@@ -44,7 +44,7 @@ SLACK_USER_TOKEN=xoxp-your-user-token
 
 Directly:
 ```bash
-npx slack-mcp-server
+npx @ubie-oss/slack-mcp-server
 ```
 
 Or, run the installed module with node:
@@ -60,7 +60,7 @@ node node_modules/.bin/slack-mcp-server
     "command": "npx",
     "args": [
       "-y",
-      "slack-mcp-server"
+      "@ubie-oss/slack-mcp-server"
     ],
     "env": {
       "SLACK_BOT_TOKEN": "<your-bot-token>",
