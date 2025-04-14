@@ -1,6 +1,6 @@
 {
   "name": "@ubie-oss/slack-mcp-server",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "A Slack MCP server",
   "main": "dist/index.js",
   "type": "module",
@@ -18,7 +18,8 @@
     "fix": "npm run fix:eslint && npm run fix:prettier",
     "fix:eslint": "eslint \"src/**/*.ts\" \"examples/**/*.ts\" --fix",
     "fix:prettier": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\"",
-    "examples": "node --import ./ts-node-loader.js examples/get_users.ts"
+    "examples": "node --import ./ts-node-loader.js examples/get_users.ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
