@@ -24,6 +24,8 @@ Available tools:
 npm install @ubie-oss/slack-mcp-server
 ```
 
+NOTE: Its now hosted in GitHub Registry so you need your PAT.
+
 ### Configuration
 
 You need to set the following environment variables:
@@ -63,6 +65,7 @@ node node_modules/.bin/slack-mcp-server
       "@ubie-oss/slack-mcp-server"
     ],
     "env": {
+      "NPM_CONFIG_//npm.pkg.github.com/:_authToken": "<your-github-pat>",
       "SLACK_BOT_TOKEN": "<your-bot-token>",
       "SLACK_USER_TOKEN": "<your-user-token>"
     }
