@@ -2,6 +2,10 @@
 
 A [MCP(Model Context Protocol)](https://www.anthropic.com/news/model-context-protocol) server for accessing Slack API. This server allows AI assistants to interact with the Slack API through a standardized interface.
 
+<a href="https://glama.ai/mcp/servers/@ubie-oss/slack-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@ubie-oss/slack-mcp-server/badge" alt="Slack Server MCP server" />
+</a>
+
 ## Features
 
 Available tools:
