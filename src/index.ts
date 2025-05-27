@@ -18,9 +18,11 @@ import {
   GetThreadRepliesRequestSchema,
   GetUsersRequestSchema,
   GetUserProfileRequestSchema,
+  GetUserProfilesRequestSchema,
   ListChannelsResponseSchema,
   GetUsersResponseSchema,
   GetUserProfileResponseSchema,
+  GetUserProfilesResponseSchema,
   SearchMessagesRequestSchema,
   SearchMessagesResponseSchema,
   ConversationsHistoryResponseSchema,
@@ -101,6 +103,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: 'slack_get_user_profile',
         description: "Get a user's profile information",
         inputSchema: zodToJsonSchema(GetUserProfileRequestSchema),
+      },
+      {
+        name: 'slack_get_user_profiles',
+        description: "Get multiple users' profile information",
+        inputSchema: zodToJsonSchema(GetUserProfilesRequestSchema),
       },
       {
         name: 'slack_search_messages',
@@ -247,6 +254,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const parsed = GetUserProfileResponseSchema.parse(response);
         return {
           content: [{ type: 'text', text: JSON.stringify(parsed) }],
+        };
+      }
+
+      case 'slack_get_user_profiles': {
+        const args = GetUserProfilesRequestSchema.parse(
+          request.params.arguments
+        );
+        const profiles = [] as Array<{ user_id: string; profile?: unknown }>;
+        for (const userId of args.user_ids) {
+          const response = await slackClient.users.profile.get({
+            user: userId,
+          });
+          if (!response.ok) {
+            throw new Error(
+              `Failed to get user profile for ${userId}: ${response.error}`
+            );
+          }
+          const parsed = GetUserProfileResponseSchema.parse(response);
+          profiles.push({ user_id: userId, profile: parsed.profile });
+        }
+        const aggregated = GetUserProfilesResponseSchema.parse({
+          ok: true,
+          profiles,
+        });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(aggregated) }],
         };
       }
 
