@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "node --import ./ts-node-loader.js src/index.ts",
+    "dev:http": "node --import ./ts-node-loader.js src/index.ts --port 8080",
     "build": "tsc -p tsconfig.build.json && shx chmod +x dist/*.js",
     "start": "node dist/index.js",
     "test": "echo \"No tests yet\"",
@@ -36,16 +37,18 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.12.0",
     "@slack/web-api": "^7.9.1",
     "@types/node": "^20.10.3",
     "dotenv": "^16.4.7",
+    "express": "^5.1.0",
     "typescript": "^5.3.2",
     "zod": "^3.22.4",
     "zod-to-json-schema": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
+    "@types/express": "^5.0.2",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.57.1",

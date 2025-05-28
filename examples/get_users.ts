@@ -14,15 +14,15 @@ const __dirname = dirname(__filename);
 config();
 
 // Get and validate necessary environment variables
-const slackToken = process.env.EXMAPLES_SLACK_BOT_TOKEN;
-const userToken = process.env.EXMAPLES_SLACK_USER_TOKEN;
+const slackToken = process.env.SLACK_BOT_TOKEN;
+const userToken = process.env.SLACK_USER_TOKEN;
 
 if (!slackToken) {
-  throw new Error('EXMAPLES_SLACK_BOT_TOKEN environment variable is required');
+  throw new Error('SLACK_BOT_TOKEN environment variable is required');
 }
 
 if (!userToken) {
-  throw new Error('EXMAPLES_SLACK_USER_TOKEN environment variable is required');
+  throw new Error('SLACK_USER_TOKEN environment variable is required');
 }
 
 // After validation, can be safely treated as a string

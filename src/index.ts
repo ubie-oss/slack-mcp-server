@@ -6,9 +6,11 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { WebClient } from '@slack/web-api';
 import dotenv from 'dotenv';
+import express from 'express';
 import {
   ListChannelsRequestSchema,
   PostMessageRequestSchema,
@@ -18,9 +20,11 @@ import {
   GetThreadRepliesRequestSchema,
   GetUsersRequestSchema,
   GetUserProfileRequestSchema,
+  GetUserProfilesRequestSchema,
   ListChannelsResponseSchema,
   GetUsersResponseSchema,
   GetUserProfileResponseSchema,
+  GetUserProfilesResponseSchema,
   SearchMessagesRequestSchema,
   SearchMessagesResponseSchema,
   ConversationsHistoryResponseSchema,
@@ -101,6 +105,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         name: 'slack_get_user_profile',
         description: "Get a user's profile information",
         inputSchema: zodToJsonSchema(GetUserProfileRequestSchema),
+      },
+      {
+        name: 'slack_get_user_profiles',
+        description: "Get multiple users' profile information in batch",
+        inputSchema: zodToJsonSchema(GetUserProfilesRequestSchema),
       },
       {
         name: 'slack_search_messages',
@@ -250,6 +259,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'slack_get_user_profiles': {
+        const args = GetUserProfilesRequestSchema.parse(
+          request.params.arguments
+        );
+
+        // Fetch multiple user profiles in parallel
+        const profilePromises = args.user_ids.map(async (userId) => {
+          try {
+            const response = await slackClient.users.profile.get({
+              user: userId,
+            });
+            if (!response.ok) {
+              return {
+                user_id: userId,
+                profile: null,
+                error: response.error || 'Failed to get profile',
+              };
+            }
+            return {
+              user_id: userId,
+              profile: response.profile,
+            };
+          } catch (error) {
+            return {
+              user_id: userId,
+              profile: null,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+          }
+        });
+
+        const profiles = await Promise.all(profilePromises);
+        const result = GetUserProfilesResponseSchema.parse({
+          ok: true,
+          profiles,
+        });
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result) }],
+        };
+      }
+
       case 'slack_search_messages': {
         const parsedParams = SearchMessagesRequestSchema.parse(
           request.params.arguments
@@ -302,10 +353,70 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-async function runServer() {
-  const transport = new StdioServerTransport();
+async function runHttpServer(port: number) {
+  console.error(
+    `Starting Slack MCP Server with HTTP transport on port ${port}`
+  );
+
+  const app = express();
+  app.use(express.json());
+
+  // トランスポートを一度だけ作成
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: () => Math.random().toString(36).substring(2, 15),
+  });
   await server.connect(transport);
-  console.error('Slack MCP Server running on stdio');
+
+  // POST /mcp - すべてのMCPリクエストを処理
+  app.post('/mcp', async (req, res) => {
+    try {
+      await transport.handleRequest(req, res, req.body);
+    } catch (error) {
+      console.error('Error handling MCP request:', error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32603,
+            message: 'Internal server error',
+          },
+          id: null,
+        });
+      }
+    }
+  });
+
+  app.listen(port, () => {
+    console.error(`Slack MCP Server listening on http://localhost:${port}`);
+  });
+}
+
+async function runServer() {
+  // コマンドライン引数を解析
+  const args = process.argv.slice(2);
+  let port: number | undefined;
+
+  // --port オプションを解析
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--port' && i + 1 < args.length) {
+      port = parseInt(args[i + 1], 10);
+      if (isNaN(port)) {
+        console.error('Invalid port number');
+        process.exit(1);
+      }
+    }
+  }
+
+  // ポートが指定された場合はStreamable HTTPトランスポートを使用
+  if (port !== undefined) {
+    await runHttpServer(port);
+  } else {
+    // デフォルトはStdioトランスポート
+    console.error('Starting Slack MCP Server with stdio transport');
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error('Slack MCP Server running on stdio');
+  }
 }
 
 runServer().catch((error) => {

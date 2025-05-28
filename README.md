@@ -14,6 +14,7 @@ Available tools:
 - `slack_get_thread_replies` - Get all replies in a message thread
 - `slack_get_users` - Retrieve basic profile information of all users in the workspace
 - `slack_get_user_profile` - Get a user's profile information
+- `slack_get_user_profiles` - Get user's profiles information
 - `slack_search_messages` - Search for messages in the workspace
 
 ## Quick Start
@@ -44,18 +45,26 @@ SLACK_USER_TOKEN=xoxp-your-user-token
 
 #### Start the MCP server
 
-Directly:
+**Stdio Transport (Default):**
 ```bash
 npx @ubie-oss/slack-mcp-server
+```
+
+**Streamable HTTP Transport:**
+```bash
+npx @ubie-oss/slack-mcp-server --port 3000
 ```
 
 Or, run the installed module with node:
 ```bash
 node node_modules/.bin/slack-mcp-server
+# or with HTTP transport
+node node_modules/.bin/slack-mcp-server --port 3000
 ```
 
 #### Edit MCP configuration json for your client:
 
+**For Stdio Transport:**
 ```json
 {
   "slack": {
@@ -72,6 +81,28 @@ node node_modules/.bin/slack-mcp-server
   }
 }
 ```
+
+**For Streamable HTTP Transport:**
+```json
+{
+  "slack": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@ubie-oss/slack-mcp-server",
+      "--port",
+      "3000"
+    ],
+    "env": {
+      "NPM_CONFIG_//npm.pkg.github.com/:_authToken": "<your-github-pat>",
+      "SLACK_BOT_TOKEN": "<your-bot-token>",
+      "SLACK_USER_TOKEN": "<your-user-token>"
+    }
+  }
+}
+```
+
+Note: When using Streamable HTTP transport, specify the `--port` parameter. If not specified, the server will use stdio transport.
 
 ## Implementation Pattern
 
@@ -96,6 +127,8 @@ For example, the `slack_list_channels` implementation parses the request with `L
 - `npm run dev` - Start the server in development mode with hot reloading
 - `npm run build` - Build the project for production
 - `npm run start` - Start the production server
+- `npm run examples` - Run example: get users demo
+- `npm run examples:get_user_profiles` - Run example: get multiple user profiles demo
 - `npm run lint` - Run linting checks (ESLint and Prettier)
 - `npm run fix` - Automatically fix linting issues
 

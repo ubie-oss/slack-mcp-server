@@ -187,6 +187,14 @@ export const GetUserProfileRequestSchema = z.object({
   user_id: z.string().describe('The ID of the user'),
 });
 
+export const GetUserProfilesRequestSchema = z.object({
+  user_ids: z
+    .array(z.string())
+    .min(1)
+    .max(50)
+    .describe('Array of user IDs to get profiles for (max 50)'),
+});
+
 export const ListChannelsRequestSchema = z.object({
   cursor: z
     .string()
@@ -319,6 +327,17 @@ export const GetUsersResponseSchema = BaseResponseSchema.extend({
 
 export const GetUserProfileResponseSchema = BaseResponseSchema.extend({
   profile: ProfileSchema.optional(),
+});
+
+export const GetUserProfilesResponseSchema = z.object({
+  ok: z.boolean(),
+  profiles: z.array(
+    z.object({
+      user_id: z.string(),
+      profile: ProfileSchema.nullable(),
+      error: z.string().optional(),
+    })
+  ),
 });
 
 export const ListChannelsResponseSchema = BaseResponseSchema.extend({
