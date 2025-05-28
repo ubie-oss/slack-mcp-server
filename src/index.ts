@@ -361,13 +361,12 @@ async function runHttpServer(port: number) {
   const app = express();
   app.use(express.json());
 
-  // トランスポートを一度だけ作成
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => Math.random().toString(36).substring(2, 15),
   });
   await server.connect(transport);
 
-  // POST /mcp - すべてのMCPリクエストを処理
+  // POST /mcp - Handle all MCP requests
   app.post('/mcp', async (req, res) => {
     try {
       await transport.handleRequest(req, res, req.body);
@@ -392,11 +391,10 @@ async function runHttpServer(port: number) {
 }
 
 async function runServer() {
-  // コマンドライン引数を解析
   const args = process.argv.slice(2);
   let port: number | undefined;
 
-  // --port オプションを解析
+  // Parse --port option
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--port' && i + 1 < args.length) {
       port = parseInt(args[i + 1], 10);
@@ -407,11 +405,11 @@ async function runServer() {
     }
   }
 
-  // ポートが指定された場合はStreamable HTTPトランスポートを使用
+  // Use Streamable HTTP transport if port is specified
   if (port !== undefined) {
     await runHttpServer(port);
   } else {
-    // デフォルトはStdioトランスポート
+    // Default is Stdio transport
     console.error('Starting Slack MCP Server with stdio transport');
     const transport = new StdioServerTransport();
     await server.connect(transport);
