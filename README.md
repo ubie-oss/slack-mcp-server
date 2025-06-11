@@ -2,6 +2,13 @@
 
 A [MCP(Model Context Protocol)](https://www.anthropic.com/news/model-context-protocol) server for accessing Slack API. This server allows AI assistants to interact with the Slack API through a standardized interface.
 
+## Transport Support
+
+This server supports both traditional and modern MCP transport methods:
+
+- **Stdio Transport** (default): Process-based communication for local integration
+- **Streamable HTTP Transport**: HTTP-based communication for web applications and remote clients
+
 ## Features
 
 Available tools:
@@ -44,17 +51,32 @@ SLACK_USER_TOKEN=xoxp-your-user-token
 
 #### Start the MCP server
 
-Directly:
+**Stdio Transport (default)**:
 ```bash
 npx @ubie-oss/slack-mcp-server
 ```
 
-Or, run the installed module with node:
+**Streamable HTTP Transport**:
 ```bash
-node node_modules/.bin/slack-mcp-server
+npx @ubie-oss/slack-mcp-server -port 3000
 ```
 
-#### Edit MCP configuration json for your client:
+You can also run the installed module with node:
+```bash
+# Stdio transport
+node node_modules/.bin/slack-mcp-server
+
+# HTTP transport  
+node node_modules/.bin/slack-mcp-server -port 3000
+```
+
+**Command Line Options**:
+- `-port <number>`: Start with Streamable HTTP transport on specified port
+- `-h, --help`: Show help message
+
+#### Client Configuration
+
+**For Stdio Transport (Claude Desktop, etc.)**:
 
 ```json
 {
@@ -72,6 +94,17 @@ node node_modules/.bin/slack-mcp-server
   }
 }
 ```
+
+**For Streamable HTTP Transport (Web applications)**:
+
+Start the server:
+```bash
+SLACK_BOT_TOKEN=<your-bot-token> SLACK_USER_TOKEN=<your-user-token> npx @ubie-oss/slack-mcp-server -port 3000
+```
+
+Connect to: `http://localhost:3000/mcp`
+
+See [examples/README.md](examples/README.md) for detailed client examples.
 
 ## Implementation Pattern
 

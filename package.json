@@ -1,6 +1,6 @@
 {
   "name": "@ubie-oss/slack-mcp-server",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "description": "A Slack MCP server",
   "main": "dist/index.js",
   "type": "module",
@@ -19,6 +19,7 @@
     "fix:eslint": "eslint \"src/**/*.ts\" \"examples/**/*.ts\" --fix",
     "fix:prettier": "prettier --write \"src/**/*.ts\" \"examples/**/*.ts\"",
     "examples": "node --import ./ts-node-loader.js examples/get_users.ts",
+    "examples:http": "node --import ./ts-node-loader.js examples/get_users_http.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -36,16 +37,18 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "@slack/web-api": "^7.9.1",
     "@types/node": "^20.10.3",
     "dotenv": "^16.4.7",
+    "express": "^5.1.0",
     "typescript": "^5.3.2",
     "zod": "^3.22.4",
     "zod-to-json-schema": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
+    "@types/express": "^5.0.3",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.57.1",
