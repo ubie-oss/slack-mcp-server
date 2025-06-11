@@ -21,6 +21,7 @@ Available tools:
 - `slack_get_thread_replies` - Get all replies in a message thread
 - `slack_get_users` - Retrieve basic profile information of all users in the workspace
 - `slack_get_user_profile` - Get a user's profile information
+- `slack_get_user_profiles` - Get multiple users' profile information in bulk (efficient for batch operations)
 - `slack_search_messages` - Search for messages in the workspace
 
 ## Quick Start

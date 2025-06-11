@@ -21,9 +21,11 @@ import {
   GetThreadRepliesRequestSchema,
   GetUsersRequestSchema,
   GetUserProfileRequestSchema,
+  GetUserProfilesRequestSchema,
   ListChannelsResponseSchema,
   GetUsersResponseSchema,
   GetUserProfileResponseSchema,
+  GetUserProfilesResponseSchema,
   SearchMessagesRequestSchema,
   SearchMessagesResponseSchema,
   ConversationsHistoryResponseSchema,
@@ -142,6 +144,11 @@ function createServer(): Server {
           name: 'slack_get_user_profile',
           description: "Get a user's profile information",
           inputSchema: zodToJsonSchema(GetUserProfileRequestSchema),
+        },
+        {
+          name: 'slack_get_user_profiles',
+          description: 'Get multiple users profile information in bulk',
+          inputSchema: zodToJsonSchema(GetUserProfilesRequestSchema),
         },
         {
           name: 'slack_search_messages',
@@ -292,6 +299,46 @@ function createServer(): Server {
           const parsed = GetUserProfileResponseSchema.parse(response);
           return {
             content: [{ type: 'text', text: JSON.stringify(parsed) }],
+          };
+        }
+
+        case 'slack_get_user_profiles': {
+          const args = GetUserProfilesRequestSchema.parse(
+            request.params.arguments
+          );
+
+          // Use Promise.all for concurrent API calls
+          const profilePromises = args.user_ids.map(async (userId) => {
+            try {
+              const response = await slackClient.users.profile.get({
+                user: userId,
+              });
+              if (!response.ok) {
+                return {
+                  user_id: userId,
+                  error: response.error || 'Unknown error',
+                };
+              }
+              const parsed = GetUserProfileResponseSchema.parse(response);
+              return {
+                user_id: userId,
+                profile: parsed.profile,
+              };
+            } catch (error) {
+              return {
+                user_id: userId,
+                error: error instanceof Error ? error.message : 'Unknown error',
+              };
+            }
+          });
+
+          const results = await Promise.all(profilePromises);
+          const responseData = GetUserProfilesResponseSchema.parse({
+            profiles: results,
+          });
+
+          return {
+            content: [{ type: 'text', text: JSON.stringify(responseData) }],
           };
         }
 
