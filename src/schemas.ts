@@ -58,23 +58,9 @@ const ConversationsHistoryMessageSchema = z
 
 const MemberSchema = z
   .object({
-    deleted: z.boolean().optional(),
     id: z.string().optional(),
-    is_admin: z.boolean().optional(),
-    is_app_user: z.boolean().optional(),
-    is_bot: z.boolean().optional(),
-    is_connector_bot: z.boolean().optional(),
-    is_email_confirmed: z.boolean().optional(),
-    is_invited_user: z.boolean().optional(),
-    is_owner: z.boolean().optional(),
-    is_primary_owner: z.boolean().optional(),
-    is_restricted: z.boolean().optional(),
-    is_ultra_restricted: z.boolean().optional(),
-    is_workflow_bot: z.boolean().optional(),
     name: z.string().optional(),
     real_name: z.string().optional(),
-    team_id: z.string().optional(),
-    updated: z.number().optional(),
   })
   .strip();
 
@@ -128,7 +114,11 @@ export const AddReactionRequestSchema = z.object({
 });
 
 export const GetChannelHistoryRequestSchema = z.object({
-  channel_id: z.string().describe('The ID of the channel'),
+  channel_id: z
+    .string()
+    .describe(
+      'The ID of the channel. Use this tool for: browsing latest messages without filters, getting ALL messages including bot/automation messages, sequential pagination. If you need to search by user, keywords, or dates, use slack_search_messages instead.'
+    ),
   cursor: z
     .string()
     .optional()
@@ -231,28 +221,74 @@ export const ReplyToThreadRequestSchema = z.object({
 });
 
 export const SearchMessagesRequestSchema = z.object({
-  query: z.string().optional().default('').describe('Basic search query'),
+  query: z
+    .string()
+    .optional()
+    .default('')
+    .describe(
+      'Basic search query text only. Use this tool when you need to: search by keywords, filter by user/date/channel, find specific messages with criteria. For general channel browsing without filters, use slack_get_channel_history instead. Do NOT include modifiers like "from:", "in:", etc. - use the dedicated fields instead.'
+    )
+    .refine(
+      (val) => {
+        if (!val) return true;
+        const modifierPattern =
+          /\b(from|in|before|after|on|during|has|is|with):/i;
+        return !modifierPattern.test(val);
+      },
+      {
+        message:
+          'Query field cannot contain modifiers (from:, in:, before:, etc.). Please use the dedicated fields for these filters.',
+      }
+    ),
 
   in_channel: z
     .string()
+    .regex(/^C[A-Z0-9]+$/, {
+      message: 'Must be a valid Slack channel ID (e.g., "C1234567")',
+    })
     .optional()
-    .describe('Search within a specific channel (channel name or ID)'),
-  in_group: z
-    .string()
-    .optional()
-    .describe('Search within a specific private group (group name or ID)'),
-  in_dm: z
-    .string()
-    .optional()
-    .describe('Search within a specific direct message (user ID)'),
+    .describe(
+      'Search within a specific channel. Must be a Slack channel ID (e.g., "C1234567"). Use slack_list_channels to find channel IDs first.'
+    ),
+
   from_user: z
     .string()
+    .regex(/^U[A-Z0-9]+$/, {
+      message: 'Must be a valid Slack user ID (e.g., "U1234567")',
+    })
     .optional()
-    .describe('Search for messages from a specific user (username or ID)'),
-  from_bot: z
+    .describe(
+      'Search for messages from a specific user. IMPORTANT: You cannot use display names or usernames directly. First use slack_get_users to find the user by name and get their user ID (e.g., "U1234567"), then use that ID here.'
+    ),
+
+  // Date modifiers
+  before: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {
+      message: 'Date must be in YYYY-MM-DD format',
+    })
+    .optional()
+    .describe('Search for messages before this date (YYYY-MM-DD)'),
+  after: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {
+      message: 'Date must be in YYYY-MM-DD format',
+    })
+    .optional()
+    .describe('Search for messages after this date (YYYY-MM-DD)'),
+  on: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {
+      message: 'Date must be in YYYY-MM-DD format',
+    })
+    .optional()
+    .describe('Search for messages on this specific date (YYYY-MM-DD)'),
+  during: z
     .string()
     .optional()
-    .describe('Search for messages from a specific bot (bot name)'),
+    .describe(
+      'Search for messages during a specific time period (e.g., "July", "2023", "last week")'
+    ),
 
   highlight: z
     .boolean()

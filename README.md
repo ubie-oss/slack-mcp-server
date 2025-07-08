@@ -22,7 +22,13 @@ Available tools:
 - `slack_get_users` - Retrieve basic profile information of all users in the workspace
 - `slack_get_user_profile` - Get a user's profile information
 - `slack_get_user_profiles` - Get multiple users' profile information in bulk (efficient for batch operations)
-- `slack_search_messages` - Search for messages in the workspace
+- `slack_search_messages` - Search for messages in the workspace with powerful filters:
+  - Basic query search
+  - Location filters: `in_channel`
+  - User filters: `from_user`, `with`
+  - Date filters: `before` (YYYY-MM-DD), `after` (YYYY-MM-DD), `on` (YYYY-MM-DD), `during` (e.g., "July", "2023")
+  - Content filters: `has` (emoji reactions), `is` (saved/thread)
+  - Sorting options by relevance score or timestamp
 
 ## Quick Start
 
