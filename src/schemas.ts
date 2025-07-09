@@ -173,10 +173,6 @@ export const GetUsersRequestSchema = z.object({
     .describe('Maximum number of users to return (default 100)'),
 });
 
-export const GetUserProfileRequestSchema = z.object({
-  user_id: z.string().describe('The ID of the user'),
-});
-
 export const GetUserProfilesRequestSchema = z.object({
   user_ids: z
     .array(z.string())
@@ -361,7 +357,7 @@ export const GetUsersResponseSchema = BaseResponseSchema.extend({
   members: z.array(MemberSchema).optional(),
 });
 
-export const GetUserProfileResponseSchema = BaseResponseSchema.extend({
+export const UserProfileResponseSchema = BaseResponseSchema.extend({
   profile: ProfileSchema.optional(),
 });
 
