@@ -20,12 +20,11 @@ import {
   GetChannelHistoryRequestSchema,
   GetThreadRepliesRequestSchema,
   GetUsersRequestSchema,
-  GetUserProfileRequestSchema,
   GetUserProfilesRequestSchema,
   ListChannelsResponseSchema,
   GetUsersResponseSchema,
-  GetUserProfileResponseSchema,
   GetUserProfilesResponseSchema,
+  UserProfileResponseSchema,
   SearchMessagesRequestSchema,
   SearchMessagesResponseSchema,
   ConversationsHistoryResponseSchema,
@@ -140,11 +139,6 @@ function createServer(): Server {
           description:
             'Retrieve basic profile information of all users in the workspace',
           inputSchema: zodToJsonSchema(GetUsersRequestSchema),
-        },
-        {
-          name: 'slack_get_user_profile',
-          description: "Get a user's profile information",
-          inputSchema: zodToJsonSchema(GetUserProfileRequestSchema),
         },
         {
           name: 'slack_get_user_profiles',
@@ -288,22 +282,6 @@ function createServer(): Server {
           };
         }
 
-        case 'slack_get_user_profile': {
-          const args = GetUserProfileRequestSchema.parse(
-            request.params.arguments
-          );
-          const response = await slackClient.users.profile.get({
-            user: args.user_id,
-          });
-          if (!response.ok) {
-            throw new Error(`Failed to get user profile: ${response.error}`);
-          }
-          const parsed = GetUserProfileResponseSchema.parse(response);
-          return {
-            content: [{ type: 'text', text: JSON.stringify(parsed) }],
-          };
-        }
-
         case 'slack_get_user_profiles': {
           const args = GetUserProfilesRequestSchema.parse(
             request.params.arguments
@@ -321,7 +299,7 @@ function createServer(): Server {
                   error: response.error || 'Unknown error',
                 };
               }
-              const parsed = GetUserProfileResponseSchema.parse(response);
+              const parsed = UserProfileResponseSchema.parse(response);
               return {
                 user_id: userId,
                 profile: parsed.profile,
