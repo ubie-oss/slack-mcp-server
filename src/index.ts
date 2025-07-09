@@ -20,12 +20,11 @@ import {
   GetChannelHistoryRequestSchema,
   GetThreadRepliesRequestSchema,
   GetUsersRequestSchema,
-  GetUserProfileRequestSchema,
   GetUserProfilesRequestSchema,
   ListChannelsResponseSchema,
   GetUsersResponseSchema,
-  GetUserProfileResponseSchema,
   GetUserProfilesResponseSchema,
+  UserProfileResponseSchema,
   SearchMessagesRequestSchema,
   SearchMessagesResponseSchema,
   ConversationsHistoryResponseSchema,
@@ -126,7 +125,8 @@ function createServer(): Server {
         },
         {
           name: 'slack_get_channel_history',
-          description: 'Get recent messages from a channel',
+          description:
+            'Get messages from a channel in chronological order. Use this when: 1) You need the latest conversation flow without specific filters, 2) You want ALL messages including bot/automation messages, 3) You need to browse messages sequentially with pagination. Do NOT use if you have specific search criteria (user, keywords, dates) - use slack_search_messages instead.',
           inputSchema: zodToJsonSchema(GetChannelHistoryRequestSchema),
         },
         {
@@ -141,18 +141,14 @@ function createServer(): Server {
           inputSchema: zodToJsonSchema(GetUsersRequestSchema),
         },
         {
-          name: 'slack_get_user_profile',
-          description: "Get a user's profile information",
-          inputSchema: zodToJsonSchema(GetUserProfileRequestSchema),
-        },
-        {
           name: 'slack_get_user_profiles',
           description: 'Get multiple users profile information in bulk',
           inputSchema: zodToJsonSchema(GetUserProfilesRequestSchema),
         },
         {
           name: 'slack_search_messages',
-          description: 'Search for messages in the workspace',
+          description:
+            'Search for messages with specific criteria/filters. Use this when: 1) You need to find messages from a specific user, 2) You need messages from a specific date range, 3) You need to search by keywords, 4) You want to filter by channel. This tool is optimized for targeted searches. For general channel browsing without filters, use slack_get_channel_history instead.',
           inputSchema: zodToJsonSchema(SearchMessagesRequestSchema),
         },
       ],
@@ -286,22 +282,6 @@ function createServer(): Server {
           };
         }
 
-        case 'slack_get_user_profile': {
-          const args = GetUserProfileRequestSchema.parse(
-            request.params.arguments
-          );
-          const response = await slackClient.users.profile.get({
-            user: args.user_id,
-          });
-          if (!response.ok) {
-            throw new Error(`Failed to get user profile: ${response.error}`);
-          }
-          const parsed = GetUserProfileResponseSchema.parse(response);
-          return {
-            content: [{ type: 'text', text: JSON.stringify(parsed) }],
-          };
-        }
-
         case 'slack_get_user_profiles': {
           const args = GetUserProfilesRequestSchema.parse(
             request.params.arguments
@@ -319,7 +299,7 @@ function createServer(): Server {
                   error: response.error || 'Unknown error',
                 };
               }
-              const parsed = GetUserProfileResponseSchema.parse(response);
+              const parsed = UserProfileResponseSchema.parse(response);
               return {
                 user_id: userId,
                 profile: parsed.profile,
@@ -347,22 +327,43 @@ function createServer(): Server {
             request.params.arguments
           );
 
-          let query = parsedParams.query;
+          let query = parsedParams.query || '';
+
           if (parsedParams.in_channel) {
-            query += ` in:${parsedParams.in_channel}`;
+            // Resolve channel name from ID
+            const channelInfo = await slackClient.conversations.info({
+              channel: parsedParams.in_channel,
+            });
+            if (!channelInfo.ok || !channelInfo.channel?.name) {
+              throw new Error(
+                `Failed to get channel info: ${channelInfo.error}`
+              );
+            }
+            query += ` in:${channelInfo.channel.name}`;
           }
-          if (parsedParams.in_group) {
-            query += ` in:${parsedParams.in_group}`;
-          }
-          if (parsedParams.in_dm) {
-            query += ` in:<@${parsedParams.in_dm}>`;
-          }
+
+          // Handle from_user - always use user ID format
           if (parsedParams.from_user) {
             query += ` from:<@${parsedParams.from_user}>`;
           }
-          if (parsedParams.from_bot) {
-            query += ` from:${parsedParams.from_bot}`;
+
+          // Date modifiers
+          if (parsedParams.before) {
+            query += ` before:${parsedParams.before}`;
           }
+          if (parsedParams.after) {
+            query += ` after:${parsedParams.after}`;
+          }
+          if (parsedParams.on) {
+            query += ` on:${parsedParams.on}`;
+          }
+          if (parsedParams.during) {
+            query += ` during:${parsedParams.during}`;
+          }
+
+          // Trim and log the final query for debugging
+          query = query.trim();
+          console.log('Search query:', query);
 
           const response = await userClient.search.messages({
             query: query,
