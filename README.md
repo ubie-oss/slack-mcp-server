@@ -2,6 +2,9 @@
 
 A [MCP(Model Context Protocol)](https://www.anthropic.com/news/model-context-protocol) server for accessing Slack API. This server allows AI assistants to interact with the Slack API through a standardized interface.
 
+> [!CAUTION]
+> This repository is **NOT** the original `ubie-oss/slack-mcp-server`. It has been forked and modified to use the Slack User OAuth Token instead of the Bot Token. Use this server at your own risk.
+
 ## Transport Support
 
 This server supports both traditional and modern MCP transport methods:
@@ -34,7 +37,7 @@ Available tools:
 ### Installation
 
 ```bash
-npm install @ubie-oss/slack-mcp-server
+npm install @j-i-k-o/slack-mcp-server
 ```
 
 NOTE: Its now hosted in GitHub Registry so you need your PAT.
@@ -43,15 +46,17 @@ NOTE: Its now hosted in GitHub Registry so you need your PAT.
 
 You need to set the following environment variables:
 
-- `SLACK_BOT_TOKEN`: Slack Bot User OAuth Token
-- `SLACK_USER_TOKEN`: Slack User OAuth Token (required for some features like message search)
+- `SLACK_BOT_TOKEN`: Slack Bot User OAuth Token (legacy, no longer used)
+- `SLACK_USER_TOKEN`: Slack User OAuth Token (required for all operations)
 
 You can also create a `.env` file to set these environment variables:
 
 ```
-SLACK_BOT_TOKEN=xoxb-your-bot-token
-SLACK_USER_TOKEN=xoxp-your-user-token
+SLACK_BOT_TOKEN=xoxb-your-bot-token  # Legacy, no longer used
+SLACK_USER_TOKEN=xoxp-your-user-token  # Required for all operations
 ```
+
+**Important**: All operations now use the User OAuth Token (`SLACK_USER_TOKEN`) instead of the Bot Token. This provides broader access to Slack APIs and ensures consistent functionality across all tools.
 
 ### Usage
 
@@ -59,12 +64,12 @@ SLACK_USER_TOKEN=xoxp-your-user-token
 
 **Stdio Transport (default)**:
 ```bash
-npx @ubie-oss/slack-mcp-server
+npx @j-i-k-o/slack-mcp-server
 ```
 
 **Streamable HTTP Transport**:
 ```bash
-npx @ubie-oss/slack-mcp-server -port 3000
+npx @j-i-k-o/slack-mcp-server -port 3000
 ```
 
 You can also run the installed module with node:
@@ -90,7 +95,7 @@ node node_modules/.bin/slack-mcp-server -port 3000
     "command": "npx",
     "args": [
       "-y",
-      "@ubie-oss/slack-mcp-server"
+      "@j-i-k-o/slack-mcp-server"
     ],
     "env": {
       "NPM_CONFIG_//npm.pkg.github.com/:_authToken": "<your-github-pat>",
@@ -105,7 +110,7 @@ node node_modules/.bin/slack-mcp-server -port 3000
 
 Start the server:
 ```bash
-SLACK_BOT_TOKEN=<your-bot-token> SLACK_USER_TOKEN=<your-user-token> npx @ubie-oss/slack-mcp-server -port 3000
+SLACK_BOT_TOKEN=<your-bot-token> SLACK_USER_TOKEN=<your-user-token> npx @j-i-k-o/slack-mcp-server -port 3000
 ```
 
 Connect to: `http://localhost:3000/mcp`
@@ -126,7 +131,7 @@ This server adopts the following implementation pattern:
    - Parse response with Zod schema to limit to necessary fields
    - Return as JSON
 
-For example, the `slack_list_channels` implementation parses the request with `ListChannelsRequestSchema`, calls `slackClient.conversations.list`, and returns the response parsed with `ListChannelsResponseSchema`.
+For example, the `slack_list_channels` implementation parses the request with `ListChannelsRequestSchema`, calls `userClient.conversations.list`, and returns the response parsed with `ListChannelsResponseSchema`.
 
 ## Development
 

@@ -47,7 +47,6 @@ if (!process.env.SLACK_USER_TOKEN) {
   process.exit(1);
 }
 
-const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
 const userClient = new WebClient(process.env.SLACK_USER_TOKEN);
 
 // Parse command line arguments
@@ -165,7 +164,7 @@ function createServer(): Server {
           const args = ListChannelsRequestSchema.parse(
             request.params.arguments
           );
-          const response = await slackClient.conversations.list({
+          const response = await userClient.conversations.list({
             limit: args.limit,
             cursor: args.cursor,
             types: 'public_channel', // Only public channels
@@ -182,7 +181,7 @@ function createServer(): Server {
 
         case 'slack_post_message': {
           const args = PostMessageRequestSchema.parse(request.params.arguments);
-          const response = await slackClient.chat.postMessage({
+          const response = await userClient.chat.postMessage({
             channel: args.channel_id,
             text: args.text,
           });
@@ -198,7 +197,7 @@ function createServer(): Server {
           const args = ReplyToThreadRequestSchema.parse(
             request.params.arguments
           );
-          const response = await slackClient.chat.postMessage({
+          const response = await userClient.chat.postMessage({
             channel: args.channel_id,
             thread_ts: args.thread_ts,
             text: args.text,
@@ -214,7 +213,7 @@ function createServer(): Server {
         }
         case 'slack_add_reaction': {
           const args = AddReactionRequestSchema.parse(request.params.arguments);
-          const response = await slackClient.reactions.add({
+          const response = await userClient.reactions.add({
             channel: args.channel_id,
             timestamp: args.timestamp,
             name: args.reaction,
@@ -231,7 +230,7 @@ function createServer(): Server {
           const args = GetChannelHistoryRequestSchema.parse(
             request.params.arguments
           );
-          const response = await slackClient.conversations.history({
+          const response = await userClient.conversations.history({
             channel: args.channel_id,
             limit: args.limit,
             cursor: args.cursor,
@@ -250,7 +249,7 @@ function createServer(): Server {
           const args = GetThreadRepliesRequestSchema.parse(
             request.params.arguments
           );
-          const response = await slackClient.conversations.replies({
+          const response = await userClient.conversations.replies({
             channel: args.channel_id,
             ts: args.thread_ts,
             limit: args.limit,
@@ -268,7 +267,7 @@ function createServer(): Server {
 
         case 'slack_get_users': {
           const args = GetUsersRequestSchema.parse(request.params.arguments);
-          const response = await slackClient.users.list({
+          const response = await userClient.users.list({
             limit: args.limit,
             cursor: args.cursor,
           });
@@ -290,7 +289,7 @@ function createServer(): Server {
           // Use Promise.all for concurrent API calls
           const profilePromises = args.user_ids.map(async (userId) => {
             try {
-              const response = await slackClient.users.profile.get({
+              const response = await userClient.users.profile.get({
                 user: userId,
               });
               if (!response.ok) {
@@ -331,7 +330,7 @@ function createServer(): Server {
 
           if (parsedParams.in_channel) {
             // Resolve channel name from ID
-            const channelInfo = await slackClient.conversations.info({
+            const channelInfo = await userClient.conversations.info({
               channel: parsedParams.in_channel,
             });
             if (!channelInfo.ok || !channelInfo.channel?.name) {

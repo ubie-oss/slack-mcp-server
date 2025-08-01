@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@ubie-oss'
+          scope: '@j-i-k-o'
           cache: 'npm'
       
       - name: Install dependencies
