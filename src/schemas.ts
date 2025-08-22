@@ -52,7 +52,7 @@ const ConversationsHistoryMessageSchema = z
     thread_ts: z.string().optional(),
     ts: z.string().optional(),
     type: z.string().optional(),
-    user: z.string().optional(),
+    user: z.string().nullable().optional(),
   })
   .strip();
 
@@ -90,7 +90,7 @@ const SearchMessageSchema = z
     text: z.string().optional(),
     ts: z.string().optional(),
     type: z.string().optional(),
-    user: z.string().optional(),
+    user: z.string().nullable().optional(),
   })
   .strip();
 
