@@ -52,6 +52,14 @@ if (!process.env.SLACK_USER_TOKEN) {
 const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
 const userClient = new WebClient(process.env.SLACK_USER_TOKEN);
 
+// Safe search mode to exclude private channels and DMs
+const safeSearchMode = process.env.SLACK_SAFE_SEARCH === 'true';
+if (safeSearchMode) {
+  console.error(
+    'Safe search mode enabled: Private channels and DMs will be excluded from search results'
+  );
+}
+
 // Parse command line arguments
 function parseArguments() {
   const args = process.argv.slice(2);
@@ -390,6 +398,38 @@ function createServer(): Server {
 
           if (!response.ok) {
             throw new Error(`Failed to search messages: ${response.error}`);
+          }
+
+          // Apply safe search filtering if enabled (before parsing)
+          if (safeSearchMode && response.messages?.matches) {
+            const originalCount = response.messages.matches.length;
+            response.messages.matches = response.messages.matches.filter(
+              (msg: {
+                channel?: {
+                  is_private?: boolean;
+                  is_im?: boolean;
+                  is_mpim?: boolean;
+                };
+              }) => {
+                // Exclude private channels, DMs, and multi-party DMs
+                const channel = msg.channel;
+                if (!channel) return true; // Keep if no channel info
+
+                return !(
+                  channel.is_private ||
+                  channel.is_im ||
+                  channel.is_mpim
+                );
+              }
+            );
+
+            const filteredCount =
+              originalCount - response.messages.matches.length;
+            if (filteredCount > 0) {
+              console.error(
+                `Safe search: Filtered out ${filteredCount} messages from private channels/DMs`
+              );
+            }
           }
 
           const parsed = SearchMessagesResponseSchema.parse(response);
