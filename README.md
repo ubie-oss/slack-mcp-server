@@ -45,12 +45,14 @@ You need to set the following environment variables:
 
 - `SLACK_BOT_TOKEN`: Slack Bot User OAuth Token
 - `SLACK_USER_TOKEN`: Slack User OAuth Token (required for some features like message search)
+- `SLACK_SAFE_SEARCH` (optional): When set to `true`, automatically excludes private channels, DMs, and group DMs from search results. This is enforced server-side and cannot be overridden by clients.
 
 You can also create a `.env` file to set these environment variables:
 
 ```
 SLACK_BOT_TOKEN=xoxb-your-bot-token
 SLACK_USER_TOKEN=xoxp-your-user-token
+SLACK_SAFE_SEARCH=true  # Optional: Enable safe search mode
 ```
 
 ### Usage
@@ -95,7 +97,8 @@ node node_modules/.bin/slack-mcp-server -port 3000
     "env": {
       "NPM_CONFIG_//npm.pkg.github.com/:_authToken": "<your-github-pat>",
       "SLACK_BOT_TOKEN": "<your-bot-token>",
-      "SLACK_USER_TOKEN": "<your-user-token>"
+      "SLACK_USER_TOKEN": "<your-user-token>",
+      "SLACK_SAFE_SEARCH": "true"
     }
   }
 }
