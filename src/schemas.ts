@@ -216,6 +216,48 @@ export const ReplyToThreadRequestSchema = z.object({
     ),
 });
 
+export const SearchChannelsRequestSchema = z.object({
+  query: z
+    .string()
+    .describe(
+      'Search channels by partial name match (case-insensitive). Searches across channel names.'
+    ),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .default(20)
+    .describe('Maximum number of channels to return (default 20)'),
+  include_archived: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Include archived channels in results (default false)'),
+});
+
+export const SearchUsersRequestSchema = z.object({
+  query: z
+    .string()
+    .describe(
+      'Search users by name, display name, or real name (partial match, case-insensitive)'
+    ),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .default(20)
+    .describe('Maximum number of users to return (default 20)'),
+  include_bots: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Include bot users in results (default false)'),
+});
+
 export const SearchMessagesRequestSchema = z.object({
   query: z
     .string()
