@@ -27,6 +27,8 @@ import {
   UserProfileResponseSchema,
   SearchMessagesRequestSchema,
   SearchMessagesResponseSchema,
+  SearchChannelsRequestSchema,
+  SearchUsersRequestSchema,
   ConversationsHistoryResponseSchema,
   ConversationsRepliesResponseSchema,
 } from './schemas.js';
@@ -150,6 +152,18 @@ function createServer(): Server {
           description:
             'Search for messages with specific criteria/filters. Use this when: 1) You need to find messages from a specific user, 2) You need messages from a specific date range, 3) You need to search by keywords, 4) You want to filter by channel. This tool is optimized for targeted searches. For general channel browsing without filters, use slack_get_channel_history instead.',
           inputSchema: zodToJsonSchema(SearchMessagesRequestSchema),
+        },
+        {
+          name: 'slack_search_channels',
+          description:
+            'Search for channels by partial name match. Use this when you need to find channels containing specific keywords in their names. Returns up to the specified limit of matching channels.',
+          inputSchema: zodToJsonSchema(SearchChannelsRequestSchema),
+        },
+        {
+          name: 'slack_search_users',
+          description:
+            'Search for users by partial name match across username, display name, and real name. Use this when you need to find users containing specific keywords in their names. Returns up to the specified limit of matching users.',
+          inputSchema: zodToJsonSchema(SearchUsersRequestSchema),
         },
       ],
     };
@@ -379,6 +393,145 @@ function createServer(): Server {
           }
 
           const parsed = SearchMessagesResponseSchema.parse(response);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(parsed) }],
+          };
+        }
+
+        case 'slack_search_channels': {
+          const args = SearchChannelsRequestSchema.parse(
+            request.params.arguments
+          );
+
+          // Fetch all channels with a reasonable limit
+          const allChannels: Array<{
+            id?: string;
+            name?: string;
+            is_archived?: boolean;
+            [key: string]: unknown;
+          }> = [];
+          let cursor: string | undefined;
+          const maxPages = 5; // Limit to prevent infinite loops
+          let pageCount = 0;
+
+          // Fetch multiple pages if needed
+          while (pageCount < maxPages) {
+            const response = await slackClient.conversations.list({
+              types: 'public_channel',
+              exclude_archived: !args.include_archived,
+              limit: 1000, // Max allowed by Slack API
+              cursor,
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to search channels: ${response.error}`);
+            }
+
+            if (response.channels) {
+              allChannels.push(...(response.channels as typeof allChannels));
+            }
+
+            cursor = response.response_metadata?.next_cursor;
+            pageCount++;
+
+            // Stop if no more pages
+            if (!cursor) break;
+          }
+
+          // Filter channels by name (case-insensitive partial match)
+          const searchTerm = args.query.toLowerCase();
+          const filteredChannels = allChannels.filter((channel) =>
+            channel.name?.toLowerCase().includes(searchTerm)
+          );
+
+          // Limit results
+          const limitedChannels = filteredChannels.slice(0, args.limit);
+
+          const response = {
+            ok: true,
+            channels: limitedChannels,
+          };
+
+          const parsed = ListChannelsResponseSchema.parse(response);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(parsed) }],
+          };
+        }
+
+        case 'slack_search_users': {
+          const args = SearchUsersRequestSchema.parse(request.params.arguments);
+
+          // Fetch all users with a reasonable limit
+          const allUsers: Array<{
+            id?: string;
+            name?: string;
+            real_name?: string;
+            is_bot?: boolean;
+            profile?: {
+              display_name?: string;
+              display_name_normalized?: string;
+              [key: string]: unknown;
+            };
+            [key: string]: unknown;
+          }> = [];
+          let cursor: string | undefined;
+          const maxPages = 5; // Limit to prevent infinite loops
+          let pageCount = 0;
+
+          // Fetch multiple pages if needed
+          while (pageCount < maxPages) {
+            const response = await slackClient.users.list({
+              limit: 1000, // Max allowed by Slack API
+              cursor,
+            });
+
+            if (!response.ok) {
+              throw new Error(`Failed to search users: ${response.error}`);
+            }
+
+            if (response.members) {
+              allUsers.push(...(response.members as typeof allUsers));
+            }
+
+            cursor = response.response_metadata?.next_cursor;
+            pageCount++;
+
+            // Stop if no more pages
+            if (!cursor) break;
+          }
+
+          // Filter users (case-insensitive partial match across multiple fields)
+          const searchTerm = args.query.toLowerCase();
+          const filteredUsers = allUsers.filter((user) => {
+            // Skip bots if requested
+            if (!args.include_bots && user.is_bot) {
+              return false;
+            }
+
+            // Search across multiple name fields
+            const name = user.name?.toLowerCase() || '';
+            const realName = user.real_name?.toLowerCase() || '';
+            const displayName = user.profile?.display_name?.toLowerCase() || '';
+            const displayNameNormalized =
+              user.profile?.display_name_normalized?.toLowerCase() || '';
+
+            return (
+              name.includes(searchTerm) ||
+              realName.includes(searchTerm) ||
+              displayName.includes(searchTerm) ||
+              displayNameNormalized.includes(searchTerm)
+            );
+          });
+
+          // Limit results
+          const limitedUsers = filteredUsers.slice(0, args.limit);
+
+          const response = {
+            ok: true,
+            members: limitedUsers,
+          };
+
+          const parsed = GetUsersResponseSchema.parse(response);
           return {
             content: [{ type: 'text', text: JSON.stringify(parsed) }],
           };
