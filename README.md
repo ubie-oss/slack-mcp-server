@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/ubie-oss-slack-mcp-server-badge.png)](https://mseep.ai/app/ubie-oss-slack-mcp-server)
+
 # slack-mcp-server
 
 A [MCP(Model Context Protocol)](https://www.anthropic.com/news/model-context-protocol) server for accessing Slack API. This server allows AI assistants to interact with the Slack API through a standardized interface.
