@@ -170,7 +170,7 @@ function createServer(): Server {
         {
           name: 'slack_search_users',
           description:
-            'Search for users by partial name match across username, display name, and real name. Use this when you need to find users containing specific keywords in their names. Returns up to the specified limit of matching users.',
+            'Search for users by partial match across username, display name, real name, and email. Use this when you need to find users by name or email address. Returns up to the specified limit of matching users.',
           inputSchema: zodToJsonSchema(SearchUsersRequestSchema),
         },
       ],
@@ -548,18 +548,20 @@ function createServer(): Server {
               return false;
             }
 
-            // Search across multiple name fields
+            // Search across multiple name and profile fields
             const name = user.name?.toLowerCase() || '';
             const realName = user.real_name?.toLowerCase() || '';
             const displayName = user.profile?.display_name?.toLowerCase() || '';
             const displayNameNormalized =
               user.profile?.display_name_normalized?.toLowerCase() || '';
+            const email = (user.profile?.email as string)?.toLowerCase() || '';
 
             return (
               name.includes(searchTerm) ||
               realName.includes(searchTerm) ||
               displayName.includes(searchTerm) ||
-              displayNameNormalized.includes(searchTerm)
+              displayNameNormalized.includes(searchTerm) ||
+              email.includes(searchTerm)
             );
           });
 
