@@ -19,8 +19,18 @@ jobs:
           node-version: '20'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@ubie-oss'
-          cache: 'npm'
-      
+
+      # Namespace npm cache by workflow so CI (ci.yml) and publish (publish.yml)
+      # do not share a key. This is defense in depth against a poisoned cache
+      # being restored on the publish path.
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-${{ github.workflow }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.workflow }}-npm-
+
       - name: Install dependencies
         run: npm ci
       
