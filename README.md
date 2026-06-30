@@ -95,6 +95,7 @@ node node_modules/.bin/slack-mcp-server -port 3000
       "@ubie-oss/slack-mcp-server"
     ],
     "env": {
+      "NPM_CONFIG_@ubie-oss:registry": "https://npm.pkg.github.com/",
       "NPM_CONFIG_//npm.pkg.github.com/:_authToken": "<your-github-pat>",
       "SLACK_BOT_TOKEN": "<your-bot-token>",
       "SLACK_USER_TOKEN": "<your-user-token>",
