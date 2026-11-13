@@ -11,7 +11,7 @@
     "dev": "node --import ./ts-node-loader.js src/index.ts",
     "build": "tsc -p tsconfig.build.json && shx chmod +x dist/*.js",
     "start": "node dist/index.js",
-    "test": "echo \"No tests yet\"",
+    "test": "node --import ./ts-node-loader.js --test src/*.test.ts",
     "lint": "npm run lint:eslint && npm run lint:prettier",
     "lint:eslint": "eslint \"src/**/*.ts\" \"examples/**/*.ts\"",
     "lint:prettier": "prettier --check \"src/**/*.ts\" \"examples/**/*.ts\"",

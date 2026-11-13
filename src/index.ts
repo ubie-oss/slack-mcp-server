@@ -26,12 +26,13 @@ import {
   GetUserProfilesResponseSchema,
   UserProfileResponseSchema,
   SearchMessagesRequestSchema,
-  SearchMessagesResponseSchema,
+  PublicSearchMessagesRequestSchema,
   SearchChannelsRequestSchema,
   SearchUsersRequestSchema,
   ConversationsHistoryResponseSchema,
   ConversationsRepliesResponseSchema,
 } from './schemas.js';
+import { searchMessages } from './message-search.js';
 
 dotenv.config();
 
@@ -52,11 +53,11 @@ if (!process.env.SLACK_USER_TOKEN) {
 const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
 const userClient = new WebClient(process.env.SLACK_USER_TOKEN);
 
-// Safe search mode to exclude private channels and DMs
+// Public-channel scope is enforced by Slack before search results are paginated.
 const safeSearchMode = process.env.SLACK_SAFE_SEARCH === 'true';
 if (safeSearchMode) {
   console.error(
-    'Safe search mode enabled: Private channels and DMs will be excluded from search results'
+    'Safe search mode enabled: Searches use the public-channel Real-time Search API'
   );
 }
 
@@ -159,7 +160,11 @@ function createServer(): Server {
           name: 'slack_search_messages',
           description:
             'Search for messages with specific criteria/filters. Use this when: 1) You need to find messages from a specific user, 2) You need messages from a specific date range, 3) You need to search by keywords, 4) You want to filter by channel. This tool is optimized for targeted searches. For general channel browsing without filters, use slack_get_channel_history instead.',
-          inputSchema: zodToJsonSchema(SearchMessagesRequestSchema),
+          inputSchema: zodToJsonSchema(
+            safeSearchMode
+              ? PublicSearchMessagesRequestSchema
+              : SearchMessagesRequestSchema
+          ),
         },
         {
           name: 'slack_search_channels',
@@ -345,97 +350,22 @@ function createServer(): Server {
         }
 
         case 'slack_search_messages': {
-          const parsedParams = SearchMessagesRequestSchema.parse(
-            request.params.arguments
-          );
-
-          let query = parsedParams.query || '';
-
-          if (parsedParams.in_channel) {
-            // Resolve channel name from ID
-            const channelInfo = await slackClient.conversations.info({
-              channel: parsedParams.in_channel,
-            });
-            if (!channelInfo.ok || !channelInfo.channel?.name) {
-              throw new Error(
-                `Failed to get channel info: ${channelInfo.error}`
-              );
-            }
-            query += ` in:${channelInfo.channel.name}`;
-          }
-
-          // Handle from_user - always use user ID format
-          if (parsedParams.from_user) {
-            query += ` from:<@${parsedParams.from_user}>`;
-          }
-
-          // Date modifiers
-          if (parsedParams.before) {
-            query += ` before:${parsedParams.before}`;
-          }
-          if (parsedParams.after) {
-            query += ` after:${parsedParams.after}`;
-          }
-          if (parsedParams.on) {
-            query += ` on:${parsedParams.on}`;
-          }
-          if (parsedParams.during) {
-            query += ` during:${parsedParams.during}`;
-          }
-
-          // Trim and log the final query for debugging
-          query = query.trim();
-          console.log('Search query:', query);
-
-          const response = await userClient.search.messages({
-            query: query,
-            highlight: parsedParams.highlight,
-            sort: parsedParams.sort,
-            sort_dir: parsedParams.sort_dir,
-            count: parsedParams.count,
-            page: parsedParams.page,
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to search messages: ${response.error}`);
-          }
-
-          // Apply safe search filtering if enabled (before parsing)
-          if (safeSearchMode && response.messages?.matches) {
-            const originalCount = response.messages.matches.length;
-            response.messages.matches = response.messages.matches.filter(
-              (msg: {
-                channel?: {
-                  is_private?: boolean;
-                  is_im?: boolean;
-                  is_mpim?: boolean;
-                };
-              }) => {
-                // Exclude private channels, DMs, and multi-party DMs
-                const channel = msg.channel;
-                if (!channel) return true; // Keep if no channel info
-
-                return !(
-                  channel.is_private ||
-                  channel.is_im ||
-                  channel.is_mpim
+          return searchMessages(request.params.arguments, {
+            safeSearchMode,
+            apiCall: (method, input) => userClient.apiCall(method, input),
+            legacySearch: (input) => userClient.search.messages(input),
+            async channelName(channelId) {
+              const response = await slackClient.conversations.info({
+                channel: channelId,
+              });
+              if (!response.ok || !response.channel?.name) {
+                throw new Error(
+                  `Failed to get channel info: ${response.error}`
                 );
               }
-            );
-
-            const filteredCount =
-              originalCount - response.messages.matches.length;
-            if (filteredCount > 0) {
-              console.error(
-                `Safe search: Filtered out ${filteredCount} messages from private channels/DMs`
-              );
-            }
-          }
-
-          const parsed = SearchMessagesResponseSchema.parse(response);
-          return {
-            content: [{ type: 'text', text: JSON.stringify(parsed) }],
-          };
+              return response.channel.name;
+            },
+          });
         }
 
         case 'slack_search_channels': {
