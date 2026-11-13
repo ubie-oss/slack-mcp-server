@@ -362,6 +362,46 @@ export const SearchMessagesRequestSchema = z.object({
     .describe('Page number of results (max 100)'),
 });
 
+export const PublicSearchMessagesRequestSchema =
+  SearchMessagesRequestSchema.omit({ page: true, count: true })
+    .extend({
+      cursor: z
+        .string()
+        .optional()
+        .describe(
+          'The next_cursor returned by the previous public search, using the same query and filters.'
+        ),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(20)
+        .default(20)
+        .describe('Maximum public messages per request (1–20).'),
+    })
+    .strict();
+
+export const PublicSearchApiResponseSchema = z.object({
+  ok: z.literal(true),
+  results: z.object({
+    messages: z
+      .array(
+        z.object({
+          channel_id: z.string().min(1),
+          channel_name: z.string().optional(),
+          content: z.string(),
+          message_ts: z.string(),
+          author_user_id: z.string().nullable().optional(),
+          permalink: z.string().url(),
+        })
+      )
+      .default([]),
+  }),
+  response_metadata: z
+    .object({ next_cursor: z.string().optional() })
+    .optional(),
+});
+
 const SearchPaginationSchema = z.object({
   first: z.number().optional(),
   last: z.number().optional(),
