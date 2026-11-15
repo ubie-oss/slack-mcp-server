@@ -14,8 +14,8 @@ This server supports both traditional and modern MCP transport methods:
 Available tools:
 
 - `slack_list_channels` - List public channels in the workspace with pagination
-- `slack_post_message` - Post a new message to a Slack channel
-- `slack_reply_to_thread` - Reply to a specific message thread in Slack
+- `slack_post_message` - Post a new message to a Slack channel. `text` is standard Markdown that Slack renders; set `format: "slack_mrkdwn"` to write Slack mrkdwn instead
+- `slack_reply_to_thread` - Reply to a specific message thread in Slack. Takes `text` and `format` like `slack_post_message`
 - `slack_add_reaction` - Add a reaction emoji to a message
 - `slack_get_channel_history` - Get recent messages from a channel
 - `slack_get_thread_replies` - Get all replies in a message thread

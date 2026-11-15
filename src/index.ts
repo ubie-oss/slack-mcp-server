@@ -33,6 +33,7 @@ import {
   ConversationsRepliesResponseSchema,
 } from './schemas.js';
 import { searchMessages } from './message-search.js';
+import { toSlackMessageBody } from './message-body.js';
 
 dotenv.config();
 
@@ -211,7 +212,7 @@ function createServer(): Server {
           const args = PostMessageRequestSchema.parse(request.params.arguments);
           const response = await slackClient.chat.postMessage({
             channel: args.channel_id,
-            text: args.text,
+            ...toSlackMessageBody(args),
           });
           if (!response.ok) {
             throw new Error(`Failed to post message: ${response.error}`);
@@ -228,7 +229,7 @@ function createServer(): Server {
           const response = await slackClient.chat.postMessage({
             channel: args.channel_id,
             thread_ts: args.thread_ts,
-            text: args.text,
+            ...toSlackMessageBody(args),
           });
           if (!response.ok) {
             throw new Error(`Failed to reply to thread: ${response.error}`);
