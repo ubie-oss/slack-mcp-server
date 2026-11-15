@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+import {
+  fitsSlackMarkdownLimit,
+  messageBodyFields,
+  slackMarkdownLimitError,
+} from './message-body.js';
+
 //
 // Basic schemas
 //
@@ -196,25 +202,29 @@ export const ListChannelsRequestSchema = z.object({
     .describe('Maximum number of channels to return (default 100)'),
 });
 
-export const PostMessageRequestSchema = z.object({
-  channel_id: z.string().describe('The ID of the channel to post to'),
-  text: z.string().describe('The message text to post'),
-});
+export const PostMessageRequestSchema = z
+  .object({
+    channel_id: z.string().describe('The ID of the channel to post to'),
+    ...messageBodyFields,
+  })
+  .refine(fitsSlackMarkdownLimit, slackMarkdownLimitError);
 
-export const ReplyToThreadRequestSchema = z.object({
-  channel_id: z
-    .string()
-    .describe('The ID of the channel containing the thread'),
-  text: z.string().describe('The reply text'),
-  thread_ts: z
-    .string()
-    .regex(/^\d{10}\.\d{6}$/, {
-      message: "Timestamp must be in the format '1234567890.123456'",
-    })
-    .describe(
-      "The timestamp of the parent message in the format '1234567890.123456'. Timestamps in the format without the period can be converted by adding the period such that 6 numbers come after it."
-    ),
-});
+export const ReplyToThreadRequestSchema = z
+  .object({
+    channel_id: z
+      .string()
+      .describe('The ID of the channel containing the thread'),
+    ...messageBodyFields,
+    thread_ts: z
+      .string()
+      .regex(/^\d{10}\.\d{6}$/, {
+        message: "Timestamp must be in the format '1234567890.123456'",
+      })
+      .describe(
+        "The timestamp of the parent message in the format '1234567890.123456'. Timestamps in the format without the period can be converted by adding the period such that 6 numbers come after it."
+      ),
+  })
+  .refine(fitsSlackMarkdownLimit, slackMarkdownLimitError);
 
 export const SearchChannelsRequestSchema = z.object({
   query: z
